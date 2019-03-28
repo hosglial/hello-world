@@ -386,3 +386,4 @@ void diagram(struct z *city)
 	getch();
 	return;
 }
+'''
