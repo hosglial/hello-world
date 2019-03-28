@@ -1,4 +1,4 @@
-'''с++
+```jsx
 #include <stdio.h>
 #include <stdlib.h>
 #include <conio.h>
@@ -386,4 +386,3 @@ void diagram(struct z *city)
 	getch();
 	return;
 }
-'''
