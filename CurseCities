@@ -1,0 +1,388 @@
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <conio.h>
+#include <string.h>
+#include <malloc.h>
+#include <clocale>
+#include <windows.h>
+
+using namespace std;
+using namespace System;
+using namespace System::IO;
+
+#define ENTER 13
+#define ESC 27
+#define UP 72
+#define DOWN 80
+#define END 79
+#define HOME 71
+
+char dan[8][70] =
+{
+			 "Какой город был основан раньше всех                             ",
+			 "Список поволжских городов                                       ",
+			 "Города с населением более указанного                            ",
+			 "Алфавитный список всех городов                                  ",
+			 "Обратный алфавитный список всех городов                         ",
+			 "Есть ли города в разных регионах с одинаковой площадью          ",
+			 "Диаграмма. Процентное соотношение населения                     ",
+			 "Выход                                                           "
+};
+char BlankLine[] = "                                                                  ";
+int NC;
+
+struct z {
+	char name[20];
+	char reg[30];
+	long pop;
+	char data[11];
+	long square;
+};
+
+
+
+
+struct sp {
+	char nm[20];
+	long pop;
+	struct sp* sled;
+	struct sp* pred;
+} *spisok;
+
+
+int menu(int);
+void oldest(struct z*);
+void list(struct z*);
+void alfalist(struct z*);
+void alfalisto(struct z*);
+void vstavka(struct z*, char*);
+void listing(struct z*);
+void diagram(struct z *);
+void list1(struct z*);
+void same(struct z*);
+void text_data(char *,char *);
+int main()
+{
+	int i, n;
+	FILE *in;
+	struct z *city;
+	setlocale(LC_CTYPE, "Russian");
+	Console::CursorVisible::set(false);
+	Console::BufferHeight = Console::WindowHeight;
+	Console::BufferWidth = Console::WindowWidth;
+	if ((in = fopen("gorod.dat", "r")) == NULL)
+	{
+		printf("\nФайл spisok.dat не открыт !");
+		getch(); exit(1);
+	}
+	fscanf(in, "%d", &NC);
+	city = (struct z*)malloc(NC * sizeof(struct z));
+	Console::ForegroundColor = ConsoleColor::Red;
+	printf("Название                 Регион                 Население Г.Основания Площадь");
+	Console::ForegroundColor = ConsoleColor::White;
+	for (i = 0; i < NC; i++)
+		fscanf(in, "%s%s%ld%s%ld", city[i].name, city[i].reg, &city[i].pop, city[i].data, &city[i].square);
+	for (i = 0; i < NC; i++)
+		printf("\n%-20s %-20s %15ld %-11s %5ld ", city[i].name, city[i].reg, city[i].pop, city[i].data, city[i].square);
+	getch();
+	while (1)
+	{
+		Console::BackgroundColor = ConsoleColor::Black;
+		Console::Clear();
+		Console::ForegroundColor = ConsoleColor::Black;
+		Console::BackgroundColor = ConsoleColor::White;
+		Console::CursorLeft = 10;
+		Console::CursorTop = 4;
+		printf(BlankLine);
+
+		for (i = 0; i < 8; i++)
+		{
+			Console::CursorLeft = 10;
+			Console::CursorTop = i + 5;
+			printf(" %s ", dan[i]);
+		}
+		Console::CursorLeft = 10;
+		Console::CursorTop = 13;
+		printf(BlankLine);
+		n = menu(8);
+		switch (n)
+		{
+		case 1: oldest(city); break;
+		case 2: list(city); break;
+		case 3:	list1(city); break;
+		case 4: alfalist(city); break;
+		case 5: alfalisto(city); break;
+		case 6: same(city); break;
+		case 7: diagram(city); break;
+		case 8: exit(0);
+		}
+
+
+	}
+	return 0;
+}
+int menu(int n)
+{
+	int y1 = 0, y2 = n - 1;
+	char c = 1;
+	while (c != ESC)
+	{
+		switch (c) {
+		case DOWN: y2 = y1; y1++; break;
+		case UP: y2 = y1; y1--; break;
+		case ENTER: return y1 + 1;
+		case HOME: y2 = y1; y1 = 0; break;
+		case END: y2 = y1; y1 = n - 1; break;
+		}
+		if (y1 > n - 1) { y2 = n - 1; y1 = 0; }
+		if (y1 < 0) { y2 = 0; y1 = n - 1; }
+		Console::ForegroundColor = ConsoleColor::Red;
+		Console::BackgroundColor = ConsoleColor::Yellow;
+		Console::CursorLeft = 11;
+		Console::CursorTop = y1 + 5;
+		printf("%s", dan[y1]);
+		Console::ForegroundColor = ConsoleColor::Black;
+		Console::BackgroundColor = ConsoleColor::White;
+		Console::CursorLeft = 11;
+		Console::CursorTop = y2 + 5;
+		printf("%s", dan[y2]);
+		c = getch();
+	}
+	exit(0);
+}
+
+
+void text_data(char *s,char *sd)
+{
+	char s0[3], month[12]
+	[9]={"января","февраля","марта","апреля","мая",
+		"июня","июля","августа","сентября","октября","ноября","декабря"};
+	strcpy(s,sd+8);
+	strcat(s," ");
+	strncpy(s0,sd+5,2); s0[2]=0;
+	strcat(s,month[atoi(s0)-1]);
+	strcat(s," ");
+	strncat(s,sd,4);
+	return;
+}
+
+void oldest(struct z* city)
+{
+	int i;
+	char s[17];
+	struct z*best = city;
+	for (i = 1; i < NC; i++)
+		if (strcmp(best->data,city[i].data)>0)
+			best = &city[i];
+	text_data(s,best->data);
+	Console::ForegroundColor = ConsoleColor::Red;
+	Console::BackgroundColor = ConsoleColor::Black;
+	Console::CursorLeft = 10;
+	Console::CursorTop = 15;
+	printf("Самая старый город - %s был основан %s года", best->name,s);
+	getch();
+}
+
+
+
+void list(struct z* city)
+{
+	Console::ForegroundColor = ConsoleColor::Red;
+	Console::BackgroundColor = ConsoleColor::Black;
+	int i, k = 0, n = 15;
+	for (i = 0; i < NC; i++)
+		if (strcmp(city[i].reg, "Поволжский") == 0 )
+		{
+			k++;
+			Console::CursorLeft = 10;
+			Console::CursorTop = n;
+			printf("%s", city[i].name);
+			n++;
+		}
+
+	Console::CursorLeft = 10;
+	Console::CursorTop = n;
+	printf("%d городов в Поволжье", k);
+	getch();
+}
+
+
+
+
+
+
+void list1(struct z* city)
+{
+	int i, g,k, n = 16;
+	char s[80];
+	Console::ForegroundColor = ConsoleColor::Red;
+	Console::BackgroundColor = ConsoleColor::Black;
+	Console::CursorLeft = 10;
+	Console::CursorTop = 15;
+	printf("Введите число человек:");
+	SetConsoleCP(1251); 
+	scanf("%d",&k);
+	SetConsoleCP(866);
+	for (i = 0; i < NC; i++)
+	{
+		if (city[i].pop > k && i<13)
+		{
+			Console::CursorLeft = 10;
+			Console::CursorTop = n;
+			printf("%s", city[i].name);
+			n++;
+		}
+	}
+	getch();
+}
+
+
+
+
+
+void alfalist(struct z* city)
+{
+	int i;
+	struct sp* nt;
+	Console::ForegroundColor = ConsoleColor::Red;
+	Console::BackgroundColor = ConsoleColor::Black;
+	Console::Clear();
+	if (!spisok)
+		for (i = 0; i < NC; i++)
+			vstavka(city, city[i].name);
+	Console::Clear();
+	printf("\n Алфавитный список");
+	printf("\n ===============================\n");
+	for (nt = spisok; nt != 0; nt = nt->sled)
+		printf("\n %-20s %ld", nt->nm, nt->pop);
+	getch();
+}
+
+
+void alfalisto(struct z* city)
+{
+	int i;
+	struct sp* nt, *z;
+	Console::ForegroundColor = ConsoleColor::Red;
+	Console::BackgroundColor = ConsoleColor::Black;
+	Console::Clear();
+	if (!spisok)
+		for (i = 0; i < NC; i++)
+			vstavka(city, city[i].name);
+	Console::Clear();
+	printf("\n Обратный список");
+	printf("\n ===============================\n");
+	for (z = 0, nt = spisok; nt; z = nt, nt = nt->sled);
+	for (nt = z; nt; nt = nt->pred)
+		printf("\n %-20s %ld", nt->nm, nt->pop);
+	getch();
+}
+
+
+
+void vstavka(struct z* city, char* nm)
+{
+	int i;
+	struct sp *nov, *nt, *z = 0;
+	for (nt = spisok; nt != 0 && strcmp(nt->nm, nm) < 0; z = nt, nt = nt->sled);
+	if (nt && strcmp(nt->nm, nm) == 0) return;
+	nov = (struct sp *) malloc(sizeof(struct sp));
+	strcpy(nov->nm, nm);
+	nov->sled = nt;
+	nov->pred = z;
+	if (nt)
+		nt->pred = nov;
+
+	nov->pop = 0;
+	for (i = 0; i < NC; i++)
+		if (strcmp(city[i].name, nm) == 0)
+			nov->pop += city[i].pop;
+	if (!z)
+		spisok = nov;
+	else
+		z->sled = nov;
+	return;
+}
+
+
+
+
+
+
+void same(struct z* city)
+{
+	Console::ForegroundColor = ConsoleColor::Red;
+	Console::BackgroundColor = ConsoleColor::Black;
+	Console::CursorLeft = 10;
+	Console::CursorTop = 15;
+	int i, j;
+	bool flag =false;
+	for (i = 0; i < NC; i++)
+	{
+		for (j = 0; j < NC; j++)
+		{
+
+			if (city[i].pop == city[j].pop && strcmp(city[i].reg, city[j].reg) != 0)
+			{
+				Console::CursorTop = 15;
+				printf("Города %s и %s имеют площадь:%ld ", city[i].name, city[j].name,city[j].square);
+				Console::CursorLeft = 10;
+				Console::CursorTop = 16;
+				printf("и расположены в разных регионах");
+				flag = true;
+			}
+			if (flag == true)
+				break;
+		}
+		if (flag == true)
+			break;
+	}
+	if (flag == false)
+		printf("Таких городов нет");
+	getch();
+
+
+
+
+
+}
+
+
+void diagram(struct z *city)
+{
+	struct sp *nt;
+	int len, i, NColor;
+	long sum = 0;
+	char str1[20];
+	char str2[20];
+	System::ConsoleColor Color;
+	Console::ForegroundColor = ConsoleColor::Black;
+	Console::BackgroundColor = ConsoleColor::White;
+	Console::Clear();
+	for (i = 0; i < NC; i++) sum = sum + city[i].pop;
+	if (!spisok)
+		for (i = 0; i < NC; i++)
+			vstavka(city, city[i].name);
+	Color = ConsoleColor::Black; NColor = 0;
+	for (nt = spisok, i = 0; nt != 0; nt = nt->sled, i++)
+	{
+		sprintf(str1, "%s", nt->nm);
+		sprintf(str2, "%3.1f%%", (nt->pop*100. / sum));
+		Console::ForegroundColor = ConsoleColor::Black;
+		Console::BackgroundColor = ConsoleColor::White;
+		Console::CursorLeft = 5; Console::CursorTop = i + 1;
+		printf(str1);
+		Console::CursorLeft = 20;
+		printf("%s", str2);
+		Console::BackgroundColor = ++Color; NColor++;
+		Console::CursorLeft = 30;
+		for (len = 0; len < nt->pop * 100 / sum; len++) printf(" ");
+		if (NColor == 14)
+		{
+			Color = ConsoleColor::Black; NColor = 0;
+		}
+	}
+	getch();
+	return;
+}
